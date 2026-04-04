@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>汪帳本 — Icon Generator</title>
+<style>
+  body { font-family: sans-serif; background: #fdf6ee; color: #4a3728; padding: 40px; text-align: center; }
+  h2 { margin-bottom: 24px; }
+  canvas { border-radius: 20%; box-shadow: 0 4px 20px rgba(0,0,0,0.15); margin: 16px; }
+  button {
+    margin: 8px; padding: 12px 24px; border: none; border-radius: 12px;
+    background: #c8956c; color: white; font-size: 15px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 3px 10px rgba(200,149,108,0.4);
+  }
+  button:hover { background: #a5744e; }
+  .note { margin-top: 24px; font-size: 13px; color: #9b7b65; }
+</style>
+</head>
+<body>
+<h2>🐾 汪帳本 Icon 產生器</h2>
+<p>點擊下方按鈕，下載 192×192 和 512×512 圖示，存進 <code>icons/</code> 資料夾。</p>
+
+<canvas id="c192" width="192" height="192"></canvas>
+<canvas id="c512" width="512" height="512"></canvas>
+
+<br>
+<button onclick="download(192)">⬇ 下載 icon-192.png</button>
+<button onclick="download(512)">⬇ 下載 icon-512.png</button>
+
+<div class="note">
+  下載後，將兩個 PNG 放到 <code>icons/icon-192.png</code> 和 <code>icons/icon-512.png</code>
+</div>
+
+<script>
+function drawIcon(canvas) {
+  const s = canvas.width;
+  const ctx = canvas.getContext('2d');
+  const r = s * 0.18; // corner radius proportion
+
+  // Background — warm caramel gradient
+  const grad = ctx.createLinearGradient(0, 0, s, s);
+  grad.addColorStop(0, '#c8956c');
+  grad.addColorStop(0.6, '#e8b87d');
+  grad.addColorStop(1, '#f4c48a');
+
+  // Rounded rect fill
+  ctx.beginPath();
+  ctx.moveTo(r, 0);
+  ctx.lineTo(s - r, 0);
+  ctx.quadraticCurveTo(s, 0, s, r);
+  ctx.lineTo(s, s - r);
+  ctx.quadraticCurveTo(s, s, s - r, s);
+  ctx.lineTo(r, s);
+  ctx.quadraticCurveTo(0, s, 0, s - r);
+  ctx.lineTo(0, r);
+  ctx.quadraticCurveTo(0, 0, r, 0);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Dog emoji centered
+  const fontSize = s * 0.55;
+  ctx.font = `${fontSize}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🐶', s / 2, s / 2 + fontSize * 0.04);
+
+  // Paw print bottom-right (small)
+  const pawSize = s * 0.18;
+  ctx.font = `${pawSize}px serif`;
+  ctx.globalAlpha = 0.7;
+  ctx.fillText('🐾', s * 0.78, s * 0.82);
+  ctx.globalAlpha = 1;
+}
+
+function download(size) {
+  const canvas = document.getElementById('c' + size);
+  const link = document.createElement('a');
+  link.download = 'icon-' + size + '.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// Draw both canvases on load
+drawIcon(document.getElementById('c192'));
+drawIcon(document.getElementById('c512'));
+</script>
+</body>
+</html>
