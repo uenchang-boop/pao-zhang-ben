@@ -126,7 +126,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--cream);color:var(--t
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(244,160,160,.4)}50%{box-shadow:0 0 0 8px rgba(244,160,160,0)}}
 .mic-icon{font-size:24px}
 .voice-text-display{margin-top:8px;padding:10px 14px;background:var(--warm);
-  border-radius:var(--radius-sm);font-size:13px;color:var(--text);min-height:38px;display:none}
+  border-radius:var(--radius-sm);font-size:16px;color:var(--text);min-height:38px;display:none}
 .voice-text-display.show{display:block}
 .form-row{display:flex;gap:10px;margin-bottom:12px}
 .form-group{flex:1}
@@ -304,7 +304,7 @@ body.elder-mode .type-btn{padding:18px 12px!important;min-height:60px!important;
 body.elder-mode .submit-btn{padding:20px!important;font-size:1.0625rem!important;min-height:64px!important}
 body.elder-mode .month-btn{width:52px!important;height:52px!important;font-size:22px!important}
 body.elder-mode .ledger-chip{padding:10px 22px!important;font-size:.9375rem!important}
-body.elder-mode .cat-grid{grid-template-columns:repeat(auto-fill,minmax(90px,1fr))!important}
+body.elder-mode .cat-grid{grid-template-columns:repeat(2,1fr)!important}
 body.elder-mode .cat-item{padding:18px 8px!important;min-height:88px!important}
 body.elder-mode .cat-emoji{font-size:36px!important}
 body.elder-mode .cat-name{font-size:.875rem!important;font-weight:800!important;color:#111!important;white-space:normal!important;line-height:1.3!important;overflow:visible!important;text-overflow:unset!important}
@@ -374,6 +374,13 @@ body.elder-mode .savings-input{font-size:28px!important}
     <label>🗓 每月從</label>
     <select id="startDaySelect" onchange="saveSettings()"></select>
     <label>號開始計算</label>
+  </div>
+  <div class="settings-strip" style="gap:6px;flex-wrap:wrap">
+    <label style="flex-shrink:0">🤖 Gemini Key</label>
+    <input type="password" id="geminiKeyInput" placeholder="貼上 Gemini API Key…"
+      style="flex:1;min-width:0;border:2px solid var(--warm);border-radius:8px;padding:4px 8px;font-size:.75rem;background:white;color:var(--text);font-family:'Noto Sans TC',sans-serif;outline:none"
+      onchange="saveGeminiKey()" onkeydown="if(event.key==='Enter')saveGeminiKey()">
+    <span id="geminiKeyStatus" style="font-size:11px;flex-shrink:0;color:var(--text-light)">未設定</span>
   </div>
   <div class="add-card">
     <div class="add-card-title">✏️ 新增記錄</div>
@@ -518,16 +525,32 @@ const EMOJI_POOL = [
 ];
 
 const DEFAULT_CATS = [
-  {id:'food',  emoji:'🐾',img:'stickers/cat_hotpot.png', name:'餐飲'},
-  {id:'daily', emoji:'🦴',img:'stickers/cat_shelf.png',  name:'日用品'},
-  {id:'trans', emoji:'🐕',img:'stickers/cat_train.png',  name:'交通'},
-  {id:'shop',  emoji:'🐩',img:'stickers/cat_shopping.png',name:'購物'},
-  {id:'home',  emoji:'🏠',img:'stickers/cat_rent.png',   name:'住家'},
-  {id:'health',emoji:'💊',                               name:'醫療'},
-  {id:'fun',   emoji:'🎾',img:'stickers/cat_game.png',   name:'娛樂'},
-  {id:'learn', emoji:'📚',img:'stickers/cat_study.png',  name:'學習'},
-  {id:'pet',   emoji:'🐶',img:'stickers/sys_income.png', name:'寵物'},
-  {id:'other', emoji:'✨',img:'stickers/sys_grumpy.png', name:'其他'},
+  {id:'meal',   emoji:'🍱',img:'stickers/cat_hotpot.png',  name:'吃飯'},
+  {id:'trans',  emoji:'🚇',img:'stickers/cat_train.png',   name:'交通'},
+  {id:'crave',  emoji:'🧋',img:'stickers/cat_drink.png',   name:'想要吃'},
+  {id:'sub',    emoji:'📱',img:'stickers/cat_phone.png',   name:'各種月費'},
+  {id:'relig',  emoji:'🙏',                                name:'宗教'},
+  {id:'family', emoji:'👨‍👩‍👧',img:'stickers/cat_mom.png',   name:'家人'},
+  {id:'edu',    emoji:'📚',img:'stickers/cat_study.png',   name:'教育'},
+  {id:'health', emoji:'💊',                                name:'醫療'},
+  {id:'tech',   emoji:'💻',img:'stickers/cat_tech.png',    name:'科技'},
+  {id:'fun',    emoji:'🎮',img:'stickers/cat_game.png',    name:'娛樂'},
+  {id:'invest', emoji:'📈',img:'stickers/cat_invest.png',  name:'投資'},
+];
+
+// 分類辨識規則預設值（台灣消費情境）
+const DEFAULT_RULES = [
+  {catId:'meal',   keywords:['麥當勞','便當','晚餐','早餐','午餐','餐廳','外送','UberEats','Foodpanda','ubereats','foodpanda','全聯','飯','吃飯','餐','食','小吃','夜市','熱炒','炸雞','肯德基','摩斯','漢堡','pizza','Pizza','沙拉']},
+  {catId:'trans',  keywords:['捷運','公車','加油','中油','Uber','高鐵','台鐵','停車','油','計程車','taxi','uber','bus','火車','機票','高速公路','過路費','悠遊卡','一卡通']},
+  {catId:'crave',  keywords:['50嵐','手搖','珍奶','甜點','下午茶','蛋糕','冰淇淋','飲料','咖啡','星巴克','Starbucks','starbucks','想吃','零食','點心','布丁','泡芙','奶茶','貢茶','茶湯會']},
+  {catId:'sub',    keywords:['Netflix','netflix','Spotify','spotify','iCloud','icloud','YouTube','youtube','YouTube Premium','電信費','月費','訂閱','網路費','手機費','LINE Pay','Apple','apple','Google','google','AWS','aws']},
+  {catId:'relig',  keywords:['法鼓山','佛學','供養','聖境預言','南懷瑾','香油錢','捐款','布施','寺廟','廟','佛','菩薩','護法','功德']},
+  {catId:'family', keywords:['媽媽','太太','老婆','小孩','孩子','爸爸','家人','父母','老公','先生','兒子','女兒','岳母','婆婆','公公','奶奶','爺爺']},
+  {catId:'edu',    keywords:['課程','書籍','書','Hahow','hahow','Udemy','udemy','學費','教育','上課','補習','講座','線上課','tutor','家教','考試','報名費']},
+  {catId:'health', keywords:['診所','醫院','掛號','藥局','藥','看診','醫療','健保','牙醫','眼科','感冒','藥水','診費','復健','健檢']},
+  {catId:'tech',   keywords:['ChatGPT','chatgpt','Gemini','gemini','GitHub','github','伺服器','電腦','零件','硬體','軟體','API','api','SSD','記憶體','顯卡','主機','滑鼠','鍵盤','螢幕']},
+  {catId:'fun',    keywords:['電影','遊戲','Steam','steam','KTV','唱歌','娛樂','展覽','演唱會','concert','球賽','遊樂園','旅遊','旅行','景點','博物館']},
+  {catId:'invest', keywords:['台積電','2330','鴻海','2317','美股','複委託','股票','基金','ETF','etf','證券','手續費','投資','期貨','外匯','加密貨幣','比特幣']},
 ];
 
 // 貼圖庫（備用 63 張）
@@ -599,8 +622,23 @@ function initSize(){
 }
 function toggleSizePanel(){document.getElementById('sizePanel').classList.toggle('open')}
 
+function saveGeminiKey(){
+  const key=document.getElementById('geminiKeyInput').value.trim();
+  if(key){
+    localStorage.setItem('woofGeminiKey',key);
+    document.getElementById('geminiKeyStatus').textContent='✅ 已儲存';
+    showToast('Gemini Key 已儲存 🤖');
+  }
+}
+function loadGeminiKey(){
+  const key=localStorage.getItem('woofGeminiKey');
+  if(key){
+    document.getElementById('geminiKeyInput').value=key;
+    document.getElementById('geminiKeyStatus').textContent='✅ 已設定';
+  }
+}
 function init(){
-  initSize(); load(); loadSavings();
+  initSize(); load(); loadSavings(); loadGeminiKey();
   fillStartDaySelect();
   document.getElementById('dateInput').value=todayStr();
   renderAll();
@@ -639,13 +677,35 @@ function catIconHtml(cat){
   if(cat.img) return `<img class="cat-img" src="${cat.img}" alt="${cat.name}" loading="lazy">`;
   return `<span class="cat-emoji">${cat.emoji}</span>`;
 }
+let _pressTimer=null;
 function renderCatGrid(){
   const grid=document.getElementById('catGrid'); grid.innerHTML='';
   state.categories.forEach(cat=>{
     const item=document.createElement('div');
     item.className='cat-item'+(cat.id===selectedCatId?' selected':'');
     item.innerHTML=`${catIconHtml(cat)}<span class="cat-name">${cat.name}</span>`;
+    // 短按選擇，長按 2 秒刪除
     item.onclick=()=>{selectedCatId=cat.id;renderCatGrid();};
+    const startPress=()=>{
+      _pressTimer=setTimeout(()=>{
+        if(confirm(`確定要刪除「${cat.name}」類別嗎？\n（已使用此類別的記錄不受影響）`)){
+          state.categories=state.categories.filter(c=>c.id!==cat.id);
+          if(selectedCatId===cat.id) selectedCatId=state.categories[0]?.id||'';
+          // 同步清除對應的辨識規則
+          const rules=getCategoryRules();
+          const idx=rules.findIndex(r=>r.catId===cat.id);
+          if(idx>-1){rules.splice(idx,1);saveCategoryRules(rules);}
+          save();renderCatGrid();showToast('已刪除類別 🗑');
+        }
+      },2000);
+    };
+    const cancelPress=()=>clearTimeout(_pressTimer);
+    item.addEventListener('touchstart',startPress,{passive:true});
+    item.addEventListener('touchend',cancelPress);
+    item.addEventListener('touchmove',cancelPress);
+    item.addEventListener('mousedown',startPress);
+    item.addEventListener('mouseup',cancelPress);
+    item.addEventListener('mouseleave',cancelPress);
     grid.appendChild(item);
   });
   const add=document.createElement('div');
@@ -725,32 +785,109 @@ function stopVoice(){
   document.getElementById('voiceBtn').classList.remove('recording');
   document.getElementById('voiceBtnText').textContent='說出你的花費，我來幫你記！';
 }
-async function parseVoiceText(text){
-  showToast('🤖 AI 解析中…');
-  try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:200,
-        system:`你是記帳助理，從口語句子解析記帳資訊，只回傳 JSON，格式：{"amount":數字,"note":"備註","type":"expense或income","catHint":"類別關鍵字"}。type 預設 expense。若找不到金額 amount 給 0。`,
-        messages:[{role:'user',content:text}]})
-    });
-    const data=await res.json();
-    const parsed=JSON.parse((data.content?.[0]?.text||'{}').replace(/```json|```/g,'').trim());
-    if(parsed.amount)document.getElementById('amountInput').value=parsed.amount;
-    if(parsed.note)document.getElementById('noteInput').value=parsed.note;
-    if(parsed.type)setType(parsed.type);
-    if(parsed.catHint)autoSelectCat(parsed.catHint);
-    showToast('✅ 解析完成！確認後記帳');
-  }catch(e){showToast('解析失敗，請手動輸入 🦴');}
+// ── 分類規則 (localStorage) ──────────────────────────────────────
+function getCategoryRules(){
+  try{const s=localStorage.getItem('woofCategoryRules');if(s)return JSON.parse(s);}catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_RULES));
 }
-function autoSelectCat(hint){
-  const map={'餐':'food','飯':'food','吃':'food','飲':'food','咖啡':'food','便當':'food','超商':'food',
-    '車':'trans','油':'trans','停車':'trans','捷運':'trans','公車':'trans','計程':'trans',
-    '藥':'health','醫':'health','診':'health','書':'learn','課':'learn',
-    '狗':'pet','貓':'pet','寵':'pet','購':'shop','買':'shop','衣':'shop',
-    '房':'home','租':'home','水':'home','電':'home','電影':'fun','遊戲':'fun','玩':'fun',
-    '薪':'income','收':'income','還':'income'};
-  for(const [k,id] of Object.entries(map)){if(hint.includes(k)){selectedCatId=id;renderCatGrid();return;}}
+function saveCategoryRules(rules){
+  try{localStorage.setItem('woofCategoryRules',JSON.stringify(rules));}catch(e){}
+}
+// Layer 1: 本地 Regex 辨識
+function classifyExpense(text){
+  const rules=getCategoryRules();
+  for(const rule of rules){
+    for(const kw of rule.keywords){
+      if(text.includes(kw)) return rule.catId;
+    }
+  }
+  return null;
+}
+// 從文字提取金額與備註
+function extractAmountNote(text){
+  const nums=text.match(/\d+(?:\.\d+)?/g)||[];
+  const amount=nums.length?parseFloat(nums[nums.length-1]):0;
+  const note=text.replace(/\d+(?:\.\d+)?/g,'').replace(/元|塊|錢|块/g,'').trim()||text;
+  return{amount,note};
+}
+// Layer 2: Gemini API
+async function callGeminiAPI(text){
+  const apiKey=localStorage.getItem('woofGeminiKey');
+  if(!apiKey) return null;
+  const catNames=state.categories.map(c=>c.name).join('、');
+  const prompt=`你是台灣記帳助理。從以下句子解析記帳資訊，務必參考台灣消費情境（全聯、50嵐、中油、台積電等）。
+可選類別：${catNames}
+句子：「${text}」
+只回傳 JSON，格式：{"amount":數字,"note":"備註","catName":"類別名稱","keyword":"最適合加入規則的單一關鍵字","type":"expense或income"}
+type 預設 expense，找不到金額時 amount 給 0。`;
+  const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+  });
+  if(!res.ok) return null;
+  const data=await res.json();
+  const raw=data.candidates?.[0]?.content?.parts?.[0]?.text||'{}';
+  return JSON.parse(raw.replace(/```json|```/g,'').trim());
+}
+async function parseVoiceText(text){
+  const{amount,note}=extractAmountNote(text);
+  // Layer 1: 本地規則
+  const catId=classifyExpense(text);
+  if(catId){
+    if(amount) document.getElementById('amountInput').value=amount;
+    document.getElementById('noteInput').value=note;
+    selectedCatId=catId; renderCatGrid();
+    showToast('✅ 解析完成！確認後記帳');
+    return;
+  }
+  // Layer 2: Gemini AI
+  const geminiKey=localStorage.getItem('woofGeminiKey');
+  if(!geminiKey){
+    if(amount) document.getElementById('amountInput').value=amount;
+    document.getElementById('noteInput').value=note;
+    showToast('💡 已填入基本資訊，請選類別（可設定 Gemini Key 啟用 AI）');
+    return;
+  }
+  showToast('🤖 AI 分析中…');
+  try{
+    const parsed=await callGeminiAPI(text);
+    if(!parsed) throw new Error('no response');
+    if(parsed.amount) document.getElementById('amountInput').value=parsed.amount;
+    else if(amount) document.getElementById('amountInput').value=amount;
+    if(parsed.note) document.getElementById('noteInput').value=parsed.note;
+    else if(note) document.getElementById('noteInput').value=note;
+    if(parsed.type) setType(parsed.type);
+    if(parsed.catName){
+      const cat=state.categories.find(c=>c.name===parsed.catName);
+      if(cat){selectedCatId=cat.id;renderCatGrid();}
+    }
+    // 自動學習：詢問使用者是否加入新關鍵字
+    if(parsed.keyword&&parsed.catName){
+      const cat=state.categories.find(c=>c.name===parsed.catName);
+      if(cat){
+        const rules=getCategoryRules();
+        const rule=rules.find(r=>r.catId===cat.id);
+        const kw=parsed.keyword.trim();
+        const alreadyExists=rule&&rule.keywords.includes(kw);
+        if(kw&&!alreadyExists){
+          // 用 setTimeout 避免 toast 被 confirm 擋住
+          setTimeout(()=>{
+            if(confirm(`🤖 AI 建議將「${kw}」加入「${parsed.catName}」的辨識規則，是否同意？`)){
+              if(rule){rule.keywords.push(kw);}
+              else{rules.push({catId:cat.id,keywords:[kw]});}
+              saveCategoryRules(rules);
+              showToast(`✅ 已學習「${kw}」→「${parsed.catName}」🎉`);
+            }
+          },300);
+        }
+      }
+    }
+    showToast('✅ AI 解析完成！確認後記帳');
+  }catch(e){
+    if(amount) document.getElementById('amountInput').value=amount;
+    if(note) document.getElementById('noteInput').value=note;
+    showToast('⚠️ AI 失敗，已填入基本資訊');
+  }
 }
 
 function addRecord(){
