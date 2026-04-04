@@ -678,6 +678,7 @@ function catIconHtml(cat){
   return `<span class="cat-emoji">${cat.emoji}</span>`;
 }
 let _pressTimer=null;
+let _lastVoiceText=''; // 記錄最後一次語音辨識文字，供手動選類別學習用
 function renderCatGrid(){
   const grid=document.getElementById('catGrid'); grid.innerHTML='';
   state.categories.forEach(cat=>{
@@ -685,7 +686,29 @@ function renderCatGrid(){
     item.className='cat-item'+(cat.id===selectedCatId?' selected':'');
     item.innerHTML=`${catIconHtml(cat)}<span class="cat-name">${cat.name}</span>`;
     // 短按選擇，長按 2 秒刪除
-    item.onclick=()=>{selectedCatId=cat.id;renderCatGrid();};
+    item.onclick=()=>{
+      selectedCatId=cat.id;renderCatGrid();
+      // 若有未學習的語音文字，提示加入關鍵字
+      if(_lastVoiceText){
+        const rules=getCategoryRules();
+        const rule=rules.find(r=>r.catId===cat.id);
+        // 從語音文字提取建議關鍵字（去除數字、元、塊等）
+        const suggested=_lastVoiceText.replace(/\d+(?:\.\d+)?/g,'').replace(/元|塊|錢|块|了|的|我|要|買|付|花/g,'').trim();
+        if(suggested){
+          setTimeout(()=>{
+            const kw=prompt(`📚 學習新規則\n\n手動選了「${cat.name}」，要加入哪個關鍵字讓下次自動辨識？\n（可修改或留空跳過）`,suggested);
+            if(kw&&kw.trim()){
+              const k=kw.trim();
+              if(rule){if(!rule.keywords.includes(k))rule.keywords.push(k);}
+              else{rules.push({catId:cat.id,keywords:[k]});}
+              saveCategoryRules(rules);
+              showToast(`✅ 已學習「${k}」→「${cat.name}」🎉`);
+              _lastVoiceText=''; // 學習後清除
+            }
+          },200);
+        }
+      }
+    };
     const startPress=()=>{
       _pressTimer=setTimeout(()=>{
         if(confirm(`確定要刪除「${cat.name}」類別嗎？\n（已使用此類別的記錄不受影響）`)){
@@ -830,6 +853,7 @@ type 預設 expense，找不到金額時 amount 給 0。`;
   return JSON.parse(raw.replace(/```json|```/g,'').trim());
 }
 async function parseVoiceText(text){
+  _lastVoiceText=text; // 記錄供手動選類別學習用
   const{amount,note}=extractAmountNote(text);
   // Layer 1: 本地規則
   const catId=classifyExpense(text);
@@ -901,6 +925,7 @@ function addRecord(){
   document.getElementById('amountInput').value='';
   document.getElementById('noteInput').value='';
   document.getElementById('voiceDisplay').classList.remove('show');
+  _lastVoiceText=''; // 記帳完成後清除語音文字，避免重複學習
   renderSummary();renderRecords();showToast('記帳成功 🐾🎉');
 }
 
