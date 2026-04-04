@@ -273,6 +273,18 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--cream);color:var(--t
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
 
+/* ===== 統計圖表 ===== */
+.chart-range-row{display:flex;gap:8px;margin-bottom:14px}
+.chart-range-btn{flex:1;padding:8px 4px;border-radius:100px;border:2px solid var(--warm);
+  background:white;font-size:.8125rem;font-family:'Noto Sans TC',sans-serif;
+  color:var(--text-light);cursor:pointer;font-weight:700;transition:all .15s;touch-action:manipulation}
+.chart-range-btn.active{background:var(--yellow-light);border-color:var(--caramel);color:var(--dark-brown)}
+.chart-box{background:white;border-radius:var(--radius);padding:14px 12px;
+  box-shadow:var(--shadow-sm);margin-bottom:12px}
+.chart-box-title{font-size:.8125rem;font-weight:700;color:var(--text-light);
+  letter-spacing:1px;margin-bottom:10px;text-align:center}
+.chart-empty{text-align:center;color:var(--text-light);font-size:.875rem;padding:28px 0}
+
 /* ===== 特大模式 (xlarge) ===== */
 body.xlarge-mode .record-item{padding:18px 16px!important;margin-bottom:14px!important}
 body.xlarge-mode .record-icon-wrap{width:54px;height:54px;font-size:28px!important;border-radius:16px!important}
@@ -416,6 +428,27 @@ body.elder-mode .savings-input{font-size:28px!important}
     <div class="cat-grid" id="catGrid"></div>
     <button class="submit-btn" onclick="addRecord()">🐾 記帳！</button>
   </div>
+  <!-- 統計分析 -->
+  <div class="section-title" onclick="toggleCharts()" style="cursor:pointer;user-select:none">
+    <span>📊 統計分析</span>
+    <span id="chartsToggle" style="font-size:12px;color:var(--text-light)">▼ 展開</span>
+  </div>
+  <div id="chartsSection" style="display:none;margin-bottom:4px">
+    <div class="chart-range-row">
+      <button class="chart-range-btn active" id="range3m" onclick="setChartRange(3)">近 3 個月</button>
+      <button class="chart-range-btn" id="range6m" onclick="setChartRange(6)">近 6 個月</button>
+    </div>
+    <div class="chart-box">
+      <div class="chart-box-title">🥧 支出類別佔比</div>
+      <canvas id="pieChart"></canvas>
+      <div class="chart-empty" id="pieEmpty" style="display:none">尚無支出資料</div>
+    </div>
+    <div class="chart-box">
+      <div class="chart-box-title">📈 月度收支趨勢</div>
+      <canvas id="barChart"></canvas>
+    </div>
+  </div>
+
   <div class="section-title">
     <span>📋 本月記錄</span>
     <span style="font-size:12px;color:var(--text-light)" id="recordCount">0 筆</span>
@@ -928,6 +961,7 @@ function addRecord(){
   document.getElementById('voiceDisplay').classList.remove('show');
   _lastVoiceText=''; // 記帳完成後清除語音文字，避免重複學習
   renderSummary();renderRecords();showToast('記帳成功 🐾🎉');
+  if(_chartsOpen) renderCharts();
 }
 
 function changeMonth(d){currentMonth=new Date(currentMonth.getFullYear(),currentMonth.getMonth()+d,1);updateMonthLabel();renderSummary();renderRecords();}
@@ -981,9 +1015,89 @@ function renderRecords(){
 function deleteRecord(id,e){
   e.stopPropagation();state.records=state.records.filter(r=>r.id!==id);
   save();renderSummary();renderRecords();showToast('已刪除 🐾');
+  if(_chartsOpen) renderCharts();
 }
 
 function openModal(id){document.getElementById(id).classList.add('show')}
+
+// ── 統計圖表 ─────────────────────────────────────────────────────
+let _chartsOpen=false,_chartRange=3,_pieChart=null,_barChart=null;
+const CHART_COLORS=['#c8956c','#82c9a0','#f4a0a0','#b09fd4','#f5d76e','#7ec8c8','#e8b87d','#a8d8ea','#f2a65a','#d4b8a0','#9ecfb0'];
+
+function toggleCharts(){
+  _chartsOpen=!_chartsOpen;
+  document.getElementById('chartsSection').style.display=_chartsOpen?'':'none';
+  document.getElementById('chartsToggle').textContent=_chartsOpen?'▲ 收起':'▼ 展開';
+  if(_chartsOpen) renderCharts();
+}
+function setChartRange(m){
+  _chartRange=m;
+  document.getElementById('range3m').className='chart-range-btn'+(m===3?' active':'');
+  document.getElementById('range6m').className='chart-range-btn'+(m===6?' active':'');
+  renderCharts();
+}
+function renderCharts(){
+  if(!_chartsOpen||typeof Chart==='undefined') return;
+  const now=new Date();
+  // 建立月份列表
+  const months=[];
+  for(let i=_chartRange-1;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+  }
+  const cutoff=new Date(now.getFullYear(),now.getMonth()-_chartRange+1,1);
+  const recs=state.records.filter(r=>r.ledger===state.activeLedger&&new Date(r.date+'T00:00:00')>=cutoff);
+
+  // 圓餅圖：支出類別
+  const expRecs=recs.filter(r=>r.type==='expense');
+  const catMap={};
+  expRecs.forEach(r=>{
+    const cat=state.categories.find(c=>c.id===r.catId);
+    const name=cat?cat.name:'其他';
+    catMap[name]=(catMap[name]||0)+r.amount;
+  });
+  const pieLabels=Object.keys(catMap);
+  const pieData=Object.values(catMap);
+  const pieEmpty=document.getElementById('pieEmpty');
+  const pieCanvas=document.getElementById('pieChart');
+  if(!pieLabels.length){
+    pieCanvas.style.display='none';pieEmpty.style.display='';
+    if(_pieChart){_pieChart.destroy();_pieChart=null;}
+  } else {
+    pieCanvas.style.display='';pieEmpty.style.display='none';
+    if(_pieChart) _pieChart.destroy();
+    _pieChart=new Chart(pieCanvas.getContext('2d'),{
+      type:'doughnut',
+      data:{labels:pieLabels,datasets:[{data:pieData,
+        backgroundColor:CHART_COLORS.slice(0,pieLabels.length),
+        borderWidth:2,borderColor:'#fdf6ee'}]},
+      options:{responsive:true,cutout:'55%',
+        plugins:{legend:{position:'bottom',labels:{font:{family:'Noto Sans TC',size:11},color:'#4a3728',padding:8,boxWidth:14}},
+          tooltip:{callbacks:{label:ctx=>{const total=pieData.reduce((a,b)=>a+b,0);return ` ${ctx.label}: $${ctx.parsed.toLocaleString()} (${Math.round(ctx.parsed/total*100)}%)`;}}}}
+      }
+    });
+  }
+
+  // 直方圖：月度收支
+  const barIncome=months.map(m=>recs.filter(r=>r.type==='income'&&r.date.startsWith(m)).reduce((s,r)=>s+r.amount,0));
+  const barExpense=months.map(m=>recs.filter(r=>r.type==='expense'&&r.date.startsWith(m)).reduce((s,r)=>s+r.amount,0));
+  const barLabels=months.map(m=>{const[y,mo]=m.split('-');return `${y.slice(2)}/${mo}月`;});
+  if(_barChart) _barChart.destroy();
+  _barChart=new Chart(document.getElementById('barChart').getContext('2d'),{
+    type:'bar',
+    data:{labels:barLabels,datasets:[
+      {label:'收入',data:barIncome,backgroundColor:'rgba(130,201,160,.75)',borderColor:'#82c9a0',borderWidth:1.5,borderRadius:6},
+      {label:'支出',data:barExpense,backgroundColor:'rgba(244,160,160,.75)',borderColor:'#f4a0a0',borderWidth:1.5,borderRadius:6}
+    ]},
+    options:{responsive:true,
+      plugins:{legend:{labels:{font:{family:'Noto Sans TC',size:11},color:'#4a3728',padding:10,boxWidth:14}}},
+      scales:{
+        x:{ticks:{color:'#6b4f3a',font:{family:'Noto Sans TC',size:11}},grid:{display:false}},
+        y:{ticks:{color:'#6b4f3a',font:{family:'Noto Sans TC',size:11},callback:v=>'$'+v.toLocaleString()},grid:{color:'rgba(200,149,108,.1)'}}
+      }
+    }
+  });
+}
 function closeModal(id){document.getElementById(id).classList.remove('show')}
 
 let toastTimer;
@@ -1002,6 +1116,7 @@ document.addEventListener('click',e=>{
 
 init();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
