@@ -304,6 +304,7 @@ body.elder-mode .type-btn{padding:18px 12px!important;min-height:60px!important;
 body.elder-mode .submit-btn{padding:20px!important;font-size:1.0625rem!important;min-height:64px!important}
 body.elder-mode .month-btn{width:52px!important;height:52px!important;font-size:22px!important}
 body.elder-mode .ledger-chip{padding:10px 22px!important;font-size:.9375rem!important}
+body.xlarge-mode .cat-grid{grid-template-columns:repeat(2,1fr)!important}
 body.elder-mode .cat-grid{grid-template-columns:repeat(2,1fr)!important}
 body.elder-mode .cat-item{padding:18px 8px!important;min-height:88px!important}
 body.elder-mode .cat-emoji{font-size:36px!important}
@@ -460,15 +461,15 @@ body.elder-mode .savings-input{font-size:28px!important}
         <span class="size-btn-icon" style="font-size:15px">Aa</span>
         <span class="size-btn-sub">一般</span>
       </button>
-      <button class="size-btn" id="sz-large" onclick="applySize(18,'large')">
+      <button class="size-btn" id="sz-large" onclick="applySize(20,'large')">
         <span class="size-btn-icon" style="font-size:17px">Aa</span>
         <span class="size-btn-sub">大</span>
       </button>
-      <button class="size-btn" id="sz-xlarge" onclick="applySize(20,'xlarge')">
+      <button class="size-btn" id="sz-xlarge" onclick="applySize(26,'xlarge')">
         <span class="size-btn-icon" style="font-size:19px">Aa</span>
         <span class="size-btn-sub">特大</span>
       </button>
-      <button class="size-btn" id="sz-elder" onclick="applySize(24,'elder')">
+      <button class="size-btn" id="sz-elder" onclick="applySize(42,'elder')">
         <span class="size-btn-icon" style="font-size:20px">Aa</span>
         <span class="size-btn-sub">👴 老人</span>
       </button>
@@ -606,7 +607,7 @@ function loadSavings(){
 }
 
 // 字體大小
-const SIZE_MAP={normal:16,large:18,xlarge:20,elder:24};
+const SIZE_MAP={normal:16,large:20,xlarge:26,elder:42};
 function applySize(px,key){
   document.documentElement.style.fontSize=px+'px';
   document.querySelectorAll('.size-btn').forEach(b=>b.classList.remove('active'));
