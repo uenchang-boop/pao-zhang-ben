@@ -138,7 +138,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--cream);color:var(--t
 .form-input:focus{border-color:var(--caramel);background:white}
 
 /* Cat grid */
-.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:8px;margin-bottom:14px}
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:8px;margin-bottom:14px}
 .cat-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;
   border-radius:var(--radius-sm);border:2px solid transparent;background:var(--warm);
   cursor:pointer;transition:all .18s;touch-action:manipulation}
@@ -146,12 +146,29 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--cream);color:var(--t
 .cat-item:active{transform:scale(.95)}
 .cat-item.selected{border-color:var(--caramel);background:var(--yellow-light);
   box-shadow:0 0 0 3px rgba(232,184,125,.25)}
-.cat-emoji{font-size:28px;line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.1))}
+.cat-emoji{font-size:42px;line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.1))}
+.cat-img{width:58px;height:58px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.12));transition:transform .18s}
+.cat-item:hover .cat-img{transform:scale(1.08)}
 .cat-name{font-family:'Nunito',sans-serif;font-weight:700;font-size:.75rem;
   color:var(--text-light);text-align:center;line-height:1.2;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 .cat-item.add-cat{border:2px dashed var(--brown);background:white}
-.cat-item.add-cat .cat-emoji{font-size:22px}
+.cat-item.add-cat .cat-emoji{font-size:26px}
+/* 貼圖選擇器 */
+.sticker-tabs{display:flex;gap:6px;margin-bottom:8px}
+.sticker-tab{flex:1;padding:7px;border-radius:8px;border:2px solid var(--warm);
+  background:white;font-family:'Nunito',sans-serif;font-weight:700;font-size:12px;
+  color:var(--text-light);cursor:pointer;transition:all .15s}
+.sticker-tab.active{background:var(--yellow-light);border-color:var(--caramel);color:var(--dark-brown)}
+.sticker-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;
+  max-height:220px;overflow-y:auto;margin-bottom:12px}
+.sticker-pick{padding:6px;border-radius:10px;border:2px solid transparent;
+  background:var(--warm);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;touch-action:manipulation}
+.sticker-pick img{width:44px;height:44px;object-fit:contain}
+.sticker-pick:hover{background:var(--yellow-light);transform:scale(1.05)}
+.sticker-pick.selected{border-color:var(--caramel);background:var(--yellow-light);
+  box-shadow:0 0 0 2px rgba(232,184,125,.4)}
 .submit-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--brown),var(--soft-orange));
   color:white;border:none;border-radius:var(--radius-sm);font-family:'Nunito',sans-serif;
   font-weight:800;font-size:16px;cursor:pointer;transition:all .2s;
@@ -174,7 +191,8 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--cream);color:var(--t
 .record-item:active{transform:scale(.99)}
 .record-item.expense{border-left-color:var(--paw-pink)}
 .record-item.income{border-left-color:var(--green)}
-.record-icon-wrap{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.record-icon-wrap{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:30px;flex-shrink:0;overflow:hidden}
+.record-icon-wrap img{width:100%;height:100%;object-fit:contain}
 .record-icon-wrap.expense{background:var(--paw-light)}
 .record-icon-wrap.income{background:var(--green-light)}
 .record-info{flex:1;min-width:0}
@@ -412,8 +430,12 @@ body.elder-mode .savings-input{font-size:28px!important}
   <div class="modal">
     <div class="modal-title">🐕 新增類別</div>
     <input class="modal-input" id="catNameInput" placeholder="類別名稱">
-    <div style="font-size:12px;color:var(--text-light);margin-bottom:8px;font-weight:700;">選擇圖示：</div>
-    <div class="emoji-grid" id="emojiGrid"></div>
+    <div class="sticker-tabs">
+      <button class="sticker-tab active" id="tabSticker" onclick="switchTab('sticker')">🎨 貼圖庫</button>
+      <button class="sticker-tab" id="tabEmoji" onclick="switchTab('emoji')">😊 表情符號</button>
+    </div>
+    <div id="stickerPickPanel"><div class="sticker-grid" id="stickerGrid"></div></div>
+    <div id="emojiPickPanel" style="display:none"><div class="emoji-grid" id="emojiGrid"></div></div>
     <div class="modal-actions">
       <button class="modal-btn cancel" onclick="closeModal('catModal')">取消</button>
       <button class="modal-btn confirm" onclick="confirmAddCat()">新增 🦴</button>
@@ -496,16 +518,43 @@ const EMOJI_POOL = [
 ];
 
 const DEFAULT_CATS = [
-  {id:'food',  emoji:'🐾',name:'餐飲'},
-  {id:'daily', emoji:'🦴',name:'日用品'},
-  {id:'trans', emoji:'🐕',name:'交通'},
-  {id:'shop',  emoji:'🐩',name:'購物'},
-  {id:'home',  emoji:'🏠',name:'住家'},
-  {id:'health',emoji:'💊',name:'醫療'},
-  {id:'fun',   emoji:'🎾',name:'娛樂'},
-  {id:'learn', emoji:'📚',name:'學習'},
-  {id:'pet',   emoji:'🐶',name:'寵物'},
-  {id:'other', emoji:'✨',name:'其他'},
+  {id:'food',  emoji:'🐾',img:'stickers/cat_hotpot.png', name:'餐飲'},
+  {id:'daily', emoji:'🦴',img:'stickers/cat_shelf.png',  name:'日用品'},
+  {id:'trans', emoji:'🐕',img:'stickers/cat_train.png',  name:'交通'},
+  {id:'shop',  emoji:'🐩',img:'stickers/cat_shopping.png',name:'購物'},
+  {id:'home',  emoji:'🏠',img:'stickers/cat_rent.png',   name:'住家'},
+  {id:'health',emoji:'💊',                               name:'醫療'},
+  {id:'fun',   emoji:'🎾',img:'stickers/cat_game.png',   name:'娛樂'},
+  {id:'learn', emoji:'📚',img:'stickers/cat_study.png',  name:'學習'},
+  {id:'pet',   emoji:'🐶',img:'stickers/sys_income.png', name:'寵物'},
+  {id:'other', emoji:'✨',img:'stickers/sys_grumpy.png', name:'其他'},
+];
+
+// 貼圖庫（備用 63 張）
+const STICKER_POOL = [
+  // 狗狗系列
+  {key:'sys_overspend',name:'超支'},{key:'sys_income',name:'收入'},{key:'sys_rush',name:'趕帳'},
+  {key:'sys_balance',name:'結餘達成'},{key:'sys_save',name:'存錢成功'},{key:'sys_unknown',name:'不明支出'},
+  {key:'sys_messy',name:'帳目亂掉'},{key:'cat_food',name:'食物支出'},{key:'sys_broke',name:'吃土'},
+  {key:'cat_shop',name:'衝動購物'},{key:'sys_wind',name:'西北風'},{key:'sys_dream',name:'暴富夢'},
+  {key:'sys_lowbal',name:'餘額不足'},{key:'cat_income2',name:'薪水小偷'},{key:'sys_boss',name:'老闆咆哮'},
+  {key:'cat_receipt',name:'發票如雪'},{key:'cat_food2',name:'下午茶'},{key:'sys_grumpy',name:'厭世存錢'},
+  // 一般記帳
+  {key:'cat_train',name:'火車'},{key:'cat_taxi',name:'計程車'},{key:'cat_plane',name:'飛機'},
+  {key:'cat_bus',name:'趕公車'},{key:'cat_hotpot',name:'美食'},{key:'cat_fastfood',name:'快餐'},
+  {key:'cat_drink',name:'飲料'},{key:'cat_tech',name:'科技'},{key:'cat_phone',name:'手機'},
+  {key:'cat_game',name:'遊戲'},{key:'cat_study',name:'學習'},{key:'cat_exam',name:'考試'},
+  {key:'cat_wife',name:'太太'},{key:'cat_mom',name:'媽媽'},{key:'cat_kid',name:'小孩'},
+  {key:'cat_warehouse',name:'倉庫'},{key:'cat_inventory',name:'庫存'},{key:'cat_shelf',name:'貨架'},
+  {key:'cat_shopping',name:'購物'},{key:'cat_rent',name:'租金'},{key:'cat_invest',name:'投資'},
+  // 迷因系列
+  {key:'meme_saved',name:'多錢'},{key:'meme_many_spent',name:'怎麼買'},{key:'meme_broke',name:'吃土2'},
+  {key:'meme_slow',name:'存慢'},{key:'meme_llama',name:'意外收入'},{key:'meme_ledger',name:'記帳中'},
+  {key:'meme_nag',name:'老婆碎唸'},{key:'meme_buff',name:'大筆收入'},{key:'meme_small',name:'小額支出'},
+  {key:'meme_tech_tempt',name:'科技誘惑'},{key:'meme_flex',name:'炫耀金錢'},{key:'meme_chaos',name:'破壞'},
+  {key:'meme_internet',name:'網路費'},{key:'meme_meeting',name:'會議打擾'},{key:'meme_sub',name:'訂閱費'},
+  {key:'meme_tech_bill',name:'科技帳單'},{key:'meme_special',name:'特別日子'},{key:'meme_cinnamon',name:'肉桂費'},
+  {key:'meme_happy',name:'生活樂趣'},{key:'meme_boss_cat',name:'貓老闆'},{key:'meme_dream2',name:'夢想實現'},
 ];
 
 let state = {ledgers:['個人帳本'],activeLedger:'個人帳本',
@@ -586,12 +635,16 @@ function confirmAddLedger(){
   save();closeModal('ledgerModal');renderAll();showToast('帳本新增成功 🎉');
 }
 
+function catIconHtml(cat){
+  if(cat.img) return `<img class="cat-img" src="${cat.img}" alt="${cat.name}" loading="lazy">`;
+  return `<span class="cat-emoji">${cat.emoji}</span>`;
+}
 function renderCatGrid(){
   const grid=document.getElementById('catGrid'); grid.innerHTML='';
   state.categories.forEach(cat=>{
     const item=document.createElement('div');
     item.className='cat-item'+(cat.id===selectedCatId?' selected':'');
-    item.innerHTML=`<span class="cat-emoji">${cat.emoji}</span><span class="cat-name">${cat.name}</span>`;
+    item.innerHTML=`${catIconHtml(cat)}<span class="cat-name">${cat.name}</span>`;
     item.onclick=()=>{selectedCatId=cat.id;renderCatGrid();};
     grid.appendChild(item);
   });
@@ -600,16 +653,39 @@ function renderCatGrid(){
   add.innerHTML=`<span class="cat-emoji">➕</span><span class="cat-name">新增</span>`;
   add.onclick=openCatModal; grid.appendChild(add);
 }
+let selectedStickerKey=null;
+function switchTab(tab){
+  document.getElementById('tabSticker').className='sticker-tab'+(tab==='sticker'?' active':'');
+  document.getElementById('tabEmoji').className='sticker-tab'+(tab==='emoji'?' active':'');
+  document.getElementById('stickerPickPanel').style.display=tab==='sticker'?'':'none';
+  document.getElementById('emojiPickPanel').style.display=tab==='emoji'?'':'none';
+}
 function openCatModal(){
-  selectedEmoji='🐾';
+  selectedEmoji='🐾'; selectedStickerKey=null;
   document.getElementById('catNameInput').value='';
-  const grid=document.getElementById('emojiGrid'); grid.innerHTML='';
+  switchTab('sticker');
+  // 填貼圖庫
+  const sg=document.getElementById('stickerGrid'); sg.innerHTML='';
+  STICKER_POOL.forEach(s=>{
+    const d=document.createElement('div');
+    d.className='sticker-pick';
+    d.title=s.name;
+    d.innerHTML=`<img src="stickers/${s.key}.png" alt="${s.name}" loading="lazy">`;
+    d.onclick=()=>{
+      selectedStickerKey=s.key;
+      sg.querySelectorAll('.sticker-pick').forEach(el=>el.classList.remove('selected'));
+      d.classList.add('selected');
+    };
+    sg.appendChild(d);
+  });
+  // 填 emoji 池
+  const eg=document.getElementById('emojiGrid'); eg.innerHTML='';
   EMOJI_POOL.forEach(em=>{
     const d=document.createElement('div');
     d.className='emoji-pick'+(em===selectedEmoji?' selected':'');
     d.textContent=em;
-    d.onclick=()=>{selectedEmoji=em;document.querySelectorAll('.emoji-pick').forEach(el=>el.classList.remove('selected'));d.classList.add('selected');};
-    grid.appendChild(d);
+    d.onclick=()=>{selectedEmoji=em;selectedStickerKey=null;eg.querySelectorAll('.emoji-pick').forEach(el=>el.classList.remove('selected'));d.classList.add('selected');};
+    eg.appendChild(d);
   });
   openModal('catModal');
 }
@@ -617,7 +693,9 @@ function confirmAddCat(){
   const name=document.getElementById('catNameInput').value.trim();
   if(!name)return showToast('請輸入類別名稱 🐾');
   const id='cat_'+Date.now();
-  state.categories.push({id,emoji:selectedEmoji,name});
+  const newCat={id,emoji:selectedEmoji,name};
+  if(selectedStickerKey) newCat.img=`stickers/${selectedStickerKey}.png`;
+  state.categories.push(newCat);
   selectedCatId=id; save();closeModal('catModal');renderCatGrid();showToast('類別新增成功 🎉');
 }
 
@@ -725,7 +803,7 @@ function renderRecords(){
       const cat=state.categories.find(c=>c.id===r.catId)||{emoji:'✨',name:'其他'};
       const item=document.createElement('div');item.className=`record-item ${r.type}`;
       item.innerHTML=`
-        <div class="record-icon-wrap ${r.type}">${cat.emoji}</div>
+        <div class="record-icon-wrap ${r.type}">${cat.img?`<img src="${cat.img}" alt="${cat.name}">`:`<span style="font-size:28px">${cat.emoji}</span>`}</div>
         <div class="record-info">
           <div class="record-cat">${cat.name}</div>
           <div class="record-note">${r.note||'無備註'}</div>
