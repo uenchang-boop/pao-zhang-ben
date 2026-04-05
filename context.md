@@ -13,10 +13,13 @@
 - 各類別含台灣在地 regex 關鍵字規則（woofCategoryRules in localStorage）
 - 長按 2 秒刪除消費類別（touchstart / mousedown 跨裝置）
 - 貼圖庫系統（類別圖示）
-- 字體大小四段：normal=16px / large=20px / xlarge=26px / elder=42px
+- 字體大小四段：normal=16px / large=20px / xlarge=26px / elder=48px
 - 老人模式（elder）與特大模式（xlarge）類別格強制 2 欄顯示
 - 數據視覺化：圓餅圖（類別支出）+ 月度長條圖（收入/支出），支援 3個月 / 6個月 切換（Chart.js CDN）
 - 記帳 / 刪除後即時刷新圖表
+- CSV 匯出（含 BOM for Excel）/ 匯入（自動去重）
+- 月預算上限設定 + 進度條示警（≤20% / ≤10% / 0% / -10% 四段色彩提示）
+- 語音識別顯示文字隨字體模式同步縮放（font-size:1rem）
 
 ## 目前進度
 所有核心功能與圖表功能均已完成並 push 至 GitHub。
@@ -39,6 +42,8 @@
 - GitHub Pages（舊留存）：https://uenchang-boop.github.io/puzzle-finder-pwa/
 - 語音解析流程：Layer 1 本地 regex → Layer 2 Gemini 1.5 Flash API
 - AI 學習需用戶確認（confirm 彈窗）才會寫入 categoryRules
-- 字體模式 SIZE_MAP：`{normal:16, large:20, xlarge:26, elder:42}`
+- 字體模式 SIZE_MAP：`{normal:16, large:20, xlarge:26, elder:48}`
+
+- localStorage key 新增：`woofBudgetLimit`（帳本名→預算金額的 JSON 物件）
 
 ## 最後更新：2026-04-05

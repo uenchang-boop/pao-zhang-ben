@@ -126,7 +126,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--cream);color:var(--t
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(244,160,160,.4)}50%{box-shadow:0 0 0 8px rgba(244,160,160,0)}}
 .mic-icon{font-size:24px}
 .voice-text-display{margin-top:8px;padding:10px 14px;background:var(--warm);
-  border-radius:var(--radius-sm);font-size:16px;color:var(--text);min-height:38px;display:none}
+  border-radius:var(--radius-sm);font-size:1rem;color:var(--text);min-height:38px;display:none}
 .voice-text-display.show{display:block}
 .form-row{display:flex;gap:10px;margin-bottom:12px}
 .form-group{flex:1}
@@ -273,6 +273,23 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--cream);color:var(--t
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
 
+/* ===== CSV 按鈕 ===== */
+.csv-btn{padding:6px 14px;border:2px solid var(--warm);border-radius:8px;background:white;
+  font-size:.75rem;font-family:'Noto Sans TC',sans-serif;color:var(--text-light);
+  cursor:pointer;font-weight:700;transition:all .15s;touch-action:manipulation}
+.csv-btn:hover{border-color:var(--caramel);background:var(--yellow-light);color:var(--dark-brown)}
+
+/* ===== 預算示警 ===== */
+.budget-bar-wrap{background:white;border-radius:var(--radius-sm);padding:10px 14px;
+  margin-bottom:16px;box-shadow:var(--shadow-sm);border:2px solid var(--warm)}
+.budget-bar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.budget-bar-label{font-size:.8125rem;font-weight:700;color:var(--text-light)}
+.budget-bar-pct{font-family:'Nunito',sans-serif;font-weight:800;font-size:.875rem;color:var(--text)}
+.budget-bar-track{height:10px;background:var(--warm);border-radius:100px;overflow:hidden}
+.budget-bar-fill{height:100%;border-radius:100px;transition:width .4s ease,background .4s ease}
+.budget-warning-msg{margin-top:8px;font-size:.8125rem;font-weight:700;text-align:center;
+  padding:6px 10px;border-radius:8px;line-height:1.4}
+
 /* ===== 統計圖表 ===== */
 .chart-range-row{display:flex;gap:8px;margin-bottom:14px}
 .chart-range-btn{flex:1;padding:8px 4px;border-radius:100px;border:2px solid var(--warm);
@@ -335,6 +352,10 @@ body.elder-mode .modal-btn{padding:18px!important;font-size:1rem!important;min-h
 body.elder-mode .voice-btn{padding:20px!important;min-height:64px!important;font-size:1rem!important}
 body.elder-mode .settings-strip select{padding:10px 12px!important;font-size:.9375rem!important;border-width:2px!important;border-color:#7a4f2e!important}
 body.elder-mode .savings-input{font-size:28px!important}
+body.elder-mode .voice-text-display{padding:14px 16px!important;min-height:52px!important;line-height:1.5!important}
+body.elder-mode .budget-bar-label{font-size:1rem!important}
+body.elder-mode .budget-bar-pct{font-size:1rem!important}
+body.elder-mode .budget-warning-msg{font-size:1rem!important;padding:10px 14px!important}
 </style>
 </head>
 <body>
@@ -401,6 +422,28 @@ body.elder-mode .savings-input{font-size:28px!important}
       style="flex:1;min-width:0;border:2px solid var(--warm);border-radius:8px;padding:4px 8px;font-size:.75rem;background:white;color:var(--text);font-family:'Noto Sans TC',sans-serif;outline:none"
       onchange="saveGeminiKey()" onkeydown="if(event.key==='Enter')saveGeminiKey()">
     <span id="geminiKeyStatus" style="font-size:11px;flex-shrink:0;color:var(--text-light)">未設定</span>
+  </div>
+  <div class="settings-strip" style="gap:8px;flex-wrap:wrap">
+    <label style="flex-shrink:0">💾 帳本資料</label>
+    <button class="csv-btn" onclick="exportCSV()">⬇ 匯出 CSV</button>
+    <label class="csv-btn" style="cursor:pointer;display:inline-flex;align-items:center;margin:0" for="csvImportInput">⬆ 匯入 CSV</label>
+    <input type="file" id="csvImportInput" accept=".csv" style="display:none" onchange="importCSV(event)">
+  </div>
+  <div class="settings-strip" style="gap:8px;flex-wrap:wrap">
+    <label style="flex-shrink:0">💰 月預算上限</label>
+    <input type="number" id="budgetInput" placeholder="輸入金額…" inputmode="decimal" min="0"
+      style="flex:1;min-width:0;border:2px solid var(--warm);border-radius:8px;padding:4px 8px;font-size:.75rem;background:white;color:var(--text);font-family:'Noto Sans TC',sans-serif;outline:none"
+      oninput="saveBudget()" onkeydown="if(event.key==='Enter')this.blur()">
+    <span style="font-size:11px;flex-shrink:0;color:var(--text-light)">超支示警</span>
+  </div>
+  <!-- 預算示警進度條 -->
+  <div id="budgetWarningBar" style="display:none" class="budget-bar-wrap">
+    <div class="budget-bar-header">
+      <span class="budget-bar-label">💰 本月預算使用</span>
+      <span class="budget-bar-pct" id="budgetBarPct"></span>
+    </div>
+    <div class="budget-bar-track"><div class="budget-bar-fill" id="budgetBarFill" style="width:0%"></div></div>
+    <div class="budget-warning-msg" id="budgetWarningMsg" style="display:none"></div>
   </div>
   <div class="add-card">
     <div class="add-card-title">✏️ 新增記錄</div>
@@ -509,7 +552,7 @@ body.elder-mode .savings-input{font-size:28px!important}
         <span class="size-btn-icon" style="font-size:19px">Aa</span>
         <span class="size-btn-sub">特大</span>
       </button>
-      <button class="size-btn" id="sz-elder" onclick="applySize(42,'elder')">
+      <button class="size-btn" id="sz-elder" onclick="applySize(48,'elder')">
         <span class="size-btn-icon" style="font-size:20px">Aa</span>
         <span class="size-btn-sub">👴 老人</span>
       </button>
@@ -647,7 +690,7 @@ function loadSavings(){
 }
 
 // 字體大小
-const SIZE_MAP={normal:16,large:20,xlarge:26,elder:42};
+const SIZE_MAP={normal:16,large:20,xlarge:26,elder:48};
 function applySize(px,key){
   document.documentElement.style.fontSize=px+'px';
   document.querySelectorAll('.size-btn').forEach(b=>b.classList.remove('active'));
@@ -678,11 +721,118 @@ function loadGeminiKey(){
     document.getElementById('geminiKeyStatus').textContent='✅ 已設定';
   }
 }
+// ── 月預算示警 ────────────────────────────────────────────────────
+const BUDGET_KEY='woofBudgetLimit';
+function saveBudget(){
+  const v=document.getElementById('budgetInput').value;
+  const budgets=loadBudgets();
+  budgets[state.activeLedger]=v?parseFloat(v):0;
+  try{localStorage.setItem(BUDGET_KEY,JSON.stringify(budgets));}catch(e){}
+  renderBudgetWarning();
+}
+function loadBudgets(){
+  try{const s=localStorage.getItem(BUDGET_KEY);if(s)return JSON.parse(s);}catch(e){}
+  return {};
+}
+function loadBudgetInput(){
+  const budgets=loadBudgets();
+  const v=budgets[state.activeLedger]||0;
+  document.getElementById('budgetInput').value=v||'';
+}
+function renderBudgetWarning(){
+  const budgets=loadBudgets();
+  const limit=budgets[state.activeLedger]||0;
+  const bar=document.getElementById('budgetWarningBar');
+  if(!limit){bar.style.display='none';return;}
+  bar.style.display='';
+  const recs=getMonthRecords();
+  const expense=recs.filter(r=>r.type==='expense').reduce((s,r)=>s+r.amount,0);
+  const pct=expense/limit;
+  const remaining=1-pct;
+  const fill=document.getElementById('budgetBarFill');
+  const pctEl=document.getElementById('budgetBarPct');
+  const msg=document.getElementById('budgetWarningMsg');
+  fill.style.width=Math.min(pct*100,100)+'%';
+  pctEl.textContent='$'+expense.toLocaleString()+' / $'+limit.toLocaleString();
+  let color,warnText='',warnBg='',warnColor='';
+  if(remaining>0.2){
+    color='#82c9a0';msg.style.display='none';
+  } else if(remaining>0.1){
+    color='#f5d76e';
+    warnText='⚠️ 預算剩 '+Math.round(remaining*100)+'%，省著點喔！';
+    warnBg='#fef9e1';warnColor='#6a5200';
+  } else if(remaining>0){
+    color='#f2a65a';
+    warnText='🟠 預算快用完，剩 '+Math.round(remaining*100)+'%！';
+    warnBg='#fff3e0';warnColor='#7a3a00';
+  } else if(remaining>-0.1){
+    color='#f4a0a0';
+    warnText='🔴 預算已用完！超支 $'+(expense-limit).toLocaleString();
+    warnBg='#fde8e8';warnColor='#c0000d';
+  } else {
+    color='#d44';
+    warnText='🚨 嚴重超支 '+Math.round(-remaining*100)+'%！超出 $'+(expense-limit).toLocaleString();
+    warnBg='#fde8e8';warnColor='#c0000d';
+  }
+  fill.style.background=color;
+  pctEl.style.color=remaining>0.2?'#2a8a50':remaining>0.1?'#6a5200':remaining>0?'#7a3a00':'#c0000d';
+  if(warnText){msg.style.display='';msg.textContent=warnText;msg.style.background=warnBg;msg.style.color=warnColor;}
+}
+
+// ── CSV 匯出/匯入 ──────────────────────────────────────────────────
+function exportCSV(){
+  const all=state.records.filter(r=>r.ledger===state.activeLedger);
+  if(!all.length){showToast('沒有記錄可匯出 🐾');return;}
+  const header='日期,帳本,類型,金額,類別,備註';
+  const rows=all.map(r=>{
+    const cat=state.categories.find(c=>c.id===r.catId)||{name:'其他'};
+    const note=(r.note||'').replace(/,/g,'，');
+    return r.date+','+(r.ledger||'')+',' +(r.type==='expense'?'支出':'收入')+','+r.amount+','+cat.name+','+note;
+  });
+  const csv='\uFEFF'+[header,...rows].join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;
+  a.download='咆帳本_'+state.activeLedger+'_'+todayStr()+'.csv';
+  a.click();URL.revokeObjectURL(url);
+  showToast('匯出 '+all.length+' 筆記錄 📊');
+}
+function importCSV(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const lines=ev.target.result.replace(/\r/g,'').split('\n')
+      .filter(l=>l.trim()&&!l.startsWith('日期')&&!l.startsWith('\uFEFF日期'));
+    let imported=0,skipped=0;
+    lines.forEach(line=>{
+      const parts=line.split(',');
+      if(parts.length<5){skipped++;return;}
+      const date=parts[0].trim();
+      const typeStr=parts[2].trim();
+      const amount=parseFloat(parts[3]);
+      const catName=parts[4].trim();
+      const note=(parts[5]||'').trim();
+      if(!date||!amount||isNaN(amount)){skipped++;return;}
+      const type=typeStr==='收入'?'income':'expense';
+      const cat=state.categories.find(c=>c.name===catName)||state.categories[0];
+      const dup=state.records.find(r=>r.date===date&&r.amount===amount&&r.note===note&&r.type===type);
+      if(dup){skipped++;return;}
+      state.records.unshift({id:Date.now()+imported,ledger:state.activeLedger,type,amount,note,date,catId:cat?cat.id:'meal'});
+      imported++;
+    });
+    save();renderAll();if(_chartsOpen)renderCharts();
+    showToast('匯入 '+imported+' 筆，跳過 '+skipped+' 筆 🎉');
+  };
+  reader.readAsText(file,'utf-8');
+  e.target.value='';
+}
+
 function init(){
   initSize(); load(); loadSavings(); loadGeminiKey();
   fillStartDaySelect();
   document.getElementById('dateInput').value=todayStr();
   renderAll();
+  loadBudgetInput();
 }
 function fillStartDaySelect(){
   const sel=document.getElementById('startDaySelect'); sel.innerHTML='';
@@ -691,7 +841,7 @@ function fillStartDaySelect(){
 }
 function saveSettings(){state.settings.startDay=parseInt(document.getElementById('startDaySelect').value);save();renderSummary();renderRecords();}
 function todayStr(){return new Date().toISOString().split('T')[0]}
-function renderAll(){renderLedgerBar();renderCatGrid();renderSummary();renderRecords();updateMonthLabel();}
+function renderAll(){renderLedgerBar();renderCatGrid();renderSummary();renderRecords();updateMonthLabel();loadBudgetInput();}
 
 function renderLedgerBar(){
   const bar=document.getElementById('ledgerBar'); bar.innerHTML='';
@@ -971,7 +1121,7 @@ function addRecord(){
   if(_chartsOpen) renderCharts();
 }
 
-function changeMonth(d){currentMonth=new Date(currentMonth.getFullYear(),currentMonth.getMonth()+d,1);updateMonthLabel();renderSummary();renderRecords();}
+function changeMonth(d){currentMonth=new Date(currentMonth.getFullYear(),currentMonth.getMonth()+d,1);updateMonthLabel();renderSummary();renderRecords();renderBudgetWarning();}
 function updateMonthLabel(){document.getElementById('monthLabel').textContent=`${currentMonth.getFullYear()}年 ${currentMonth.getMonth()+1}月`;}
 function getMonthRecords(){
   const sd=state.settings.startDay,y=currentMonth.getFullYear(),m=currentMonth.getMonth();
@@ -988,6 +1138,7 @@ function renderSummary(){
   const el=document.getElementById('summaryBalance');
   el.textContent=(balance>=0?'+':'')+'$'+balance.toLocaleString();
   el.style.color=balance>=0?'#c8f7d6':'#ffe8e8';
+  renderBudgetWarning();
 }
 function renderRecords(){
   const list=document.getElementById('recordList');
