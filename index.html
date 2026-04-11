@@ -861,8 +861,9 @@ function openSavingsModal(){
 // ── 學習規則匯出 ───────────────────────────────────────────────────
 function exportRules(){
   const rules=getCategoryRules();
-  if(!rules.length){showToast('還沒有學習規則可匯出 🐾');return;}
-  const str=JSON.stringify({version:1,date:todayStr(),ledger:state.activeLedger,rules},null,2);
+  const cats=state.categories||[];
+  if(!rules.length&&!cats.length){showToast('還沒有設定可匯出 🐾');return;}
+  const str=JSON.stringify({version:2,date:todayStr(),ledger:state.activeLedger,rules,categories:cats},null,2);
   const blob=new Blob([str],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;
@@ -878,18 +879,33 @@ function importRules(e){
     try{
       const parsed=JSON.parse(ev.target.result);
       const incoming=parsed.rules||parsed;
-      if(!Array.isArray(incoming))throw new Error('invalid');
-      const existing=getCategoryRules();
-      let merged=0;
-      incoming.forEach(r=>{
-        const found=existing.find(ex=>ex.catId===r.catId);
-        if(found){
-          (r.keywords||[]).forEach(kw=>{if(!found.keywords.includes(kw)){found.keywords.push(kw);merged++;}});
-        }else{existing.push(r);merged+=(r.keywords||[]).length;}
-      });
-      saveCategoryRules(existing);
-      showToast('✅ 合併 '+merged+' 條學習規則 🎉');
-    }catch(ex){showToast('❌ 規則格式錯誤，請用匯出的 JSON 檔');}
+      let merged=0,catsImported=0;
+      // 合併學習規則
+      if(Array.isArray(incoming)){
+        const existing=getCategoryRules();
+        incoming.forEach(r=>{
+          const found=existing.find(ex=>ex.catId===r.catId);
+          if(found){
+            (r.keywords||[]).forEach(kw=>{if(!found.keywords.includes(kw)){found.keywords.push(kw);merged++;}});
+          }else{existing.push(r);merged+=(r.keywords||[]).length;}
+        });
+        saveCategoryRules(existing);
+      }
+      // 合併類別設定（name/emoji/img）
+      if(Array.isArray(parsed.categories)&&parsed.categories.length){
+        parsed.categories.forEach(c=>{
+          const found=state.categories.find(ex=>ex.id===c.id);
+          if(found){Object.assign(found,{name:c.name,emoji:c.emoji,img:c.img});}
+          else{state.categories.push(c);}
+          catsImported++;
+        });
+        save();renderAll();
+      }
+      const msg=[]
+      if(merged)msg.push(merged+' 條規則');
+      if(catsImported)msg.push(catsImported+' 個類別設定');
+      showToast('✅ 匯入 '+msg.join('＋')+' 🎉');
+    }catch(ex){showToast('❌ 格式錯誤，請用匯出的 JSON 檔');}
     e.target.value='';
   };
   reader.readAsText(file,'utf-8');
@@ -911,10 +927,11 @@ function exportCSV(){
   const a=document.createElement('a');a.href=url;
   a.download='咆帳本_'+state.activeLedger+'_'+todayStr()+'.csv';
   document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
-  // 同時匯出學習規則 JSON（同步觸發，保持在同一用戶手勢內）
+  // 同時匯出學習規則＋類別設定 JSON（同步觸發，保持在同一用戶手勢內）
   const rules=getCategoryRules();
-  if(rules.length){
-    const rulesStr=JSON.stringify({version:1,date:todayStr(),ledger:state.activeLedger,rules},null,2);
+  const cats=state.categories||[];
+  if(rules.length||cats.length){
+    const rulesStr=JSON.stringify({version:2,date:todayStr(),ledger:state.activeLedger,rules,categories:cats},null,2);
     const rulesBlob=new Blob([rulesStr],{type:'application/json'});
     const rulesUrl=URL.createObjectURL(rulesBlob);
     const rulesA=document.createElement('a');rulesA.href=rulesUrl;
