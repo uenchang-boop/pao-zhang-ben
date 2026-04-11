@@ -449,6 +449,7 @@ body.elder-mode .budget-warning-msg{font-size:1rem!important;padding:10px 14px!i
     <button class="csv-btn" onclick="exportCSV()">⬇ 匯出 CSV</button>
     <label class="csv-btn" style="cursor:pointer;display:inline-flex;align-items:center;margin:0" for="csvImportInput">⬆ 匯入 CSV</label>
     <input type="file" id="csvImportInput" accept=".csv" style="display:none" onchange="importCSV(event)">
+    <button class="csv-btn" onclick="exportRules()">⬇ 匯出規則</button>
     <label class="csv-btn" style="cursor:pointer;display:inline-flex;align-items:center;margin:0" for="rulesImportInput">⬆ 匯入規則</label>
     <input type="file" id="rulesImportInput" accept=".json" style="display:none" onchange="importRules(event)">
   </div>
@@ -858,6 +859,18 @@ function openSavingsModal(){
   openModal('savingsModal');
 }
 
+// ── 學習規則匯出 ───────────────────────────────────────────────────
+function exportRules(){
+  const rules=getCategoryRules();
+  if(!rules.length){showToast('還沒有學習規則可匯出 🐾');return;}
+  const str=JSON.stringify({version:1,date:todayStr(),ledger:state.activeLedger,rules},null,2);
+  const blob=new Blob([str],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;
+  a.download='咆帳本_分類規則_'+todayStr()+'.json';
+  a.click();URL.revokeObjectURL(url);
+  showToast('匯出 '+rules.length+' 條分類規則 📂');
+}
 // ── 學習規則匯入 ───────────────────────────────────────────────────
 function importRules(e){
   const file=e.target.files[0];if(!file)return;
