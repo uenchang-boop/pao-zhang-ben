@@ -57,7 +57,10 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--cream);color:var(--t
 .savings-row{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);
   border-radius:var(--radius-sm);padding:10px 14px;margin:12px 0 10px;
   display:flex;align-items:center;gap:14px;backdrop-filter:blur(6px)}
-.savings-pig{font-size:30px;flex-shrink:0;animation:pigWiggle 3s ease-in-out infinite}
+.savings-pig{flex-shrink:0;animation:pigWiggle 3s ease-in-out infinite;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;width:46px;height:46px}
+.savings-pig img{width:44px;height:44px;object-fit:contain;display:block}
+.savings-pig-emoji{font-size:34px;line-height:1}
 @keyframes pigWiggle{0%,100%{transform:rotate(-4deg) scale(1)}50%{transform:rotate(4deg) scale(1.08)}}
 .savings-info{flex:1;min-width:0}
 .savings-label{font-size:10px;color:rgba(255,255,255,.85);font-weight:700;
@@ -353,6 +356,21 @@ body.elder-mode .voice-btn{padding:20px!important;min-height:64px!important;font
 body.elder-mode .settings-strip select{padding:10px 12px!important;font-size:.9375rem!important;border-width:2px!important;border-color:#7a4f2e!important}
 body.elder-mode .savings-input{font-size:28px!important}
 body.elder-mode .voice-text-display{padding:14px 16px!important;min-height:52px!important;line-height:1.5!important}
+/* ===== 存款激勵 Modal ===== */
+.savings-modal-hero{text-align:center;margin-bottom:4px}
+.savings-modal-hero img{width:88px;height:88px;object-fit:contain;
+  filter:drop-shadow(0 4px 12px rgba(120,70,30,.2))}
+.savings-modal-amount{font-family:'Nunito',sans-serif;font-weight:900;
+  font-size:2.25rem;color:var(--brown);text-align:center;margin:6px 0 2px}
+.savings-modal-milestone{font-size:.9375rem;font-weight:700;
+  text-align:center;color:var(--dark-brown);margin-bottom:10px}
+.savings-modal-msg{background:var(--yellow-light);padding:10px 14px;
+  border-radius:var(--radius-sm);font-size:.875rem;color:var(--text);
+  text-align:center;line-height:1.55;margin-bottom:12px}
+.savings-modal-records{border-top:1px solid var(--warm);padding-top:10px;margin-top:2px}
+.savings-modal-records b{font-size:.8125rem;color:var(--text-light);display:block;margin-bottom:4px}
+.savings-modal-row{display:flex;justify-content:space-between;align-items:center;
+  padding:3px 0;font-size:.8125rem;color:var(--text)}
 body.elder-mode .budget-bar-label{font-size:1rem!important}
 body.elder-mode .budget-bar-pct{font-size:1rem!important}
 body.elder-mode .budget-warning-msg{font-size:1rem!important;padding:10px 14px!important}
@@ -374,15 +392,18 @@ body.elder-mode .budget-warning-msg{font-size:1rem!important;padding:10px 14px!i
 
   <!-- 本月存款 -->
   <div class="savings-row">
-    <div class="savings-pig">🐷</div>
+    <div class="savings-pig" onclick="openSavingsModal()" title="點我看存款激勵🐾">
+      <img src="stickers/meme_saved.png" alt=""
+        onerror="this.outerHTML='<span class=savings-pig-emoji>🐕</span>'">
+    </div>
     <div class="savings-info">
       <div class="savings-label">本月存款</div>
       <div class="savings-input-row">
-        <span class="savings-dollar">$</span>
+        <span class="savings-dollar" onclick="openSavingsModal()" style="cursor:pointer">$</span>
         <input class="savings-input" id="savingsInput" type="number"
           placeholder="輸入金額" inputmode="decimal" oninput="saveSavings()">
       </div>
-      <div class="savings-hint">僅記錄，不連動帳本</div>
+      <div class="savings-hint">點小狗查看激勵 🐾 · 僅記錄不連動帳本</div>
     </div>
   </div>
 
@@ -428,6 +449,8 @@ body.elder-mode .budget-warning-msg{font-size:1rem!important;padding:10px 14px!i
     <button class="csv-btn" onclick="exportCSV()">⬇ 匯出 CSV</button>
     <label class="csv-btn" style="cursor:pointer;display:inline-flex;align-items:center;margin:0" for="csvImportInput">⬆ 匯入 CSV</label>
     <input type="file" id="csvImportInput" accept=".csv" style="display:none" onchange="importCSV(event)">
+    <label class="csv-btn" style="cursor:pointer;display:inline-flex;align-items:center;margin:0" for="rulesImportInput">⬆ 匯入規則</label>
+    <input type="file" id="rulesImportInput" accept=".json" style="display:none" onchange="importRules(event)">
   </div>
   <div class="settings-strip" style="gap:8px;flex-wrap:wrap">
     <label style="flex-shrink:0">💰 月預算上限</label>
@@ -530,6 +553,21 @@ body.elder-mode .budget-warning-msg{font-size:1rem!important;padding:10px 14px!i
     <div class="modal-actions">
       <button class="modal-btn cancel" onclick="closeModal('catModal')">取消</button>
       <button class="modal-btn confirm" onclick="confirmAddCat()">新增 🦴</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="savingsModal">
+  <div class="modal">
+    <div class="savings-modal-hero">
+      <img src="stickers/meme_saved.png" alt=""
+        onerror="this.outerHTML='<div style=font-size:72px;text-align:center;margin-bottom:4px>🐕</div>'">
+    </div>
+    <div class="modal-title" style="justify-content:center">💰 本月存款</div>
+    <div id="savingsModalBody"></div>
+    <div class="modal-actions">
+      <button class="modal-btn confirm" onclick="closeModal('savingsModal')" style="width:100%">
+        繼續加油 🐾
+      </button>
     </div>
   </div>
 </div>
@@ -671,6 +709,19 @@ let recognition=null, isRecording=false, selectedEmoji='🐾';
 
 const STORE_KEY='woofBudget_v1';
 const SAVINGS_KEY='woofSavings';
+// 存款/投資偵測關鍵字
+const INVEST_KEYWORDS=['存款','儲蓄','存錢','ETF','etf','股票','買股','投資','基金','定存','美股','複委託','BTC'];
+// 存款激勵語句
+const SAVINGS_MOTIVATIONS=[
+  '一分一毫積累財富，你做到了！💪',
+  '今天的存款是未來自由的基石 🌟',
+  '省下來的錢就是賺到的錢！🐾',
+  '投資自己的未來，最值得 📈',
+  '理財高手就是你！每天一小步 🏆',
+  '財富在時間裡複利，堅持就是勝利 ✨',
+  '存錢不難，難的是開始，你已經做到了！🎉',
+  '未來的你，會謝謝現在的你 🐕',
+];
 
 function save(){try{localStorage.setItem(STORE_KEY,JSON.stringify(state))}catch(e){}}
 function load(){
@@ -779,6 +830,59 @@ function renderBudgetWarning(){
   if(warnText){msg.style.display='';msg.textContent=warnText;msg.style.background=warnBg;msg.style.color=warnColor;}
 }
 
+// ── 存款激勵 Modal ────────────────────────────────────────────────
+function openSavingsModal(){
+  const savings=parseFloat(document.getElementById('savingsInput').value)||0;
+  const recs=getMonthRecords();
+  const investRecs=recs.filter(r=>r.catId==='invest'||INVEST_KEYWORDS.some(kw=>(r.note||'').includes(kw)));
+  const motivation=SAVINGS_MOTIVATIONS[Math.floor(Math.random()*SAVINGS_MOTIVATIONS.length)];
+  let milestone='';
+  if(savings>=100000)milestone='💎 百萬存款大作戰！';
+  else if(savings>=50000)milestone='🌟 五萬里程碑達成！太厲害了！';
+  else if(savings>=30000)milestone='🏆 三萬元！理財高手！';
+  else if(savings>=10000)milestone='🎉 破萬了！繼續衝！';
+  else if(savings>=5000)milestone='💪 五千里程碑！';
+  else if(savings>=1000)milestone='🐾 第一個千元，存款起步！';
+  else if(savings>0)milestone='✨ 開始囉！每一塊都是進步！';
+  else milestone='👋 還沒有存款，快開始吧！';
+  const recordsHtml=investRecs.length?
+    '<div class="savings-modal-records"><b>本月投資 / 存款記錄</b>'+
+    investRecs.map(r=>'<div class="savings-modal-row"><span>'+r.date+'　'+(r.note||'投資存款')+'</span>'+
+      '<span style="font-weight:800;color:var(--brown)">$'+r.amount.toLocaleString()+'</span></div>').join('')+
+    '</div>':'';
+  document.getElementById('savingsModalBody').innerHTML=
+    '<div class="savings-modal-amount">$'+savings.toLocaleString()+'</div>'+
+    '<div class="savings-modal-milestone">'+milestone+'</div>'+
+    '<div class="savings-modal-msg">'+motivation+'</div>'+
+    recordsHtml;
+  openModal('savingsModal');
+}
+
+// ── 學習規則匯入 ───────────────────────────────────────────────────
+function importRules(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const parsed=JSON.parse(ev.target.result);
+      const incoming=parsed.rules||parsed;
+      if(!Array.isArray(incoming))throw new Error('invalid');
+      const existing=getCategoryRules();
+      let merged=0;
+      incoming.forEach(r=>{
+        const found=existing.find(ex=>ex.catId===r.catId);
+        if(found){
+          (r.keywords||[]).forEach(kw=>{if(!found.keywords.includes(kw)){found.keywords.push(kw);merged++;}});
+        }else{existing.push(r);merged+=(r.keywords||[]).length;}
+      });
+      saveCategoryRules(existing);
+      showToast('✅ 合併 '+merged+' 條學習規則 🎉');
+    }catch(ex){showToast('❌ 規則格式錯誤，請用匯出的 JSON 檔');}
+    e.target.value='';
+  };
+  reader.readAsText(file,'utf-8');
+}
+
 // ── CSV 匯出/匯入 ──────────────────────────────────────────────────
 function exportCSV(){
   const all=state.records.filter(r=>r.ledger===state.activeLedger);
@@ -795,7 +899,17 @@ function exportCSV(){
   const a=document.createElement('a');a.href=url;
   a.download='咆帳本_'+state.activeLedger+'_'+todayStr()+'.csv';
   a.click();URL.revokeObjectURL(url);
-  showToast('匯出 '+all.length+' 筆記錄 📊');
+  // 同時匯出學習規則 JSON
+  const rules=getCategoryRules();
+  if(rules.length){
+    const rulesStr=JSON.stringify({version:1,date:todayStr(),ledger:state.activeLedger,rules},null,2);
+    const rulesBlob=new Blob([rulesStr],{type:'application/json'});
+    const rulesUrl=URL.createObjectURL(rulesBlob);
+    const rulesA=document.createElement('a');rulesA.href=rulesUrl;
+    rulesA.download='咆帳本_分類規則_'+todayStr()+'.json';
+    setTimeout(()=>{rulesA.click();URL.revokeObjectURL(rulesUrl);},300);
+  }
+  showToast('匯出 '+all.length+' 筆記錄＋分類規則 📊');
 }
 function importCSV(e){
   const file=e.target.files[0];if(!file)return;
@@ -1044,7 +1158,18 @@ type 預設 expense，找不到金額時 amount 給 0。`;
   return JSON.parse(raw.replace(/```json|```/g,'').trim());
 }
 async function parseVoiceText(text){
-  _lastVoiceText=text; // 記錄供手動選類別學習用
+  _lastVoiceText=text;
+  // ── 存款/投資自動偵測 ─────────────────────────
+  if(INVEST_KEYWORDS.some(kw=>text.includes(kw))){
+    const{amount}=extractAmountNote(text);
+    if(amount>0){
+      const cur=parseFloat(document.getElementById('savingsInput').value)||0;
+      document.getElementById('savingsInput').value=cur+amount;
+      saveSavings();
+      if(state.categories.find(c=>c.id==='invest'))selectedCatId='invest';
+      showToast('💰 偵測到存款/投資，已加入本月存款 +$'+amount.toLocaleString()+' 🐾');
+    }
+  }
   const{amount,note}=extractAmountNote(text);
   // Layer 1: 本地規則
   const catId=classifyExpense(text);
