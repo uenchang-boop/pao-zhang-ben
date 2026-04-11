@@ -446,10 +446,9 @@ body.elder-mode .budget-warning-msg{font-size:1rem!important;padding:10px 14px!i
   </div>
   <div class="settings-strip" style="gap:8px;flex-wrap:wrap">
     <label style="flex-shrink:0">💾 帳本資料</label>
-    <button class="csv-btn" onclick="exportCSV()">⬇ 匯出 CSV</button>
+    <button class="csv-btn" onclick="exportCSV()">⬇ 匯出 CSV+規則</button>
     <label class="csv-btn" style="cursor:pointer;display:inline-flex;align-items:center;margin:0" for="csvImportInput">⬆ 匯入 CSV</label>
     <input type="file" id="csvImportInput" accept=".csv" style="display:none" onchange="importCSV(event)">
-    <button class="csv-btn" onclick="exportRules()">⬇ 匯出規則</button>
     <label class="csv-btn" style="cursor:pointer;display:inline-flex;align-items:center;margin:0" for="rulesImportInput">⬆ 匯入規則</label>
     <input type="file" id="rulesImportInput" accept=".json" style="display:none" onchange="importRules(event)">
   </div>
