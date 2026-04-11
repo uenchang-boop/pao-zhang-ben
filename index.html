@@ -910,8 +910,8 @@ function exportCSV(){
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;
   a.download='咆帳本_'+state.activeLedger+'_'+todayStr()+'.csv';
-  a.click();URL.revokeObjectURL(url);
-  // 同時匯出學習規則 JSON
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  // 同時匯出學習規則 JSON（同步觸發，保持在同一用戶手勢內）
   const rules=getCategoryRules();
   if(rules.length){
     const rulesStr=JSON.stringify({version:1,date:todayStr(),ledger:state.activeLedger,rules},null,2);
@@ -919,7 +919,7 @@ function exportCSV(){
     const rulesUrl=URL.createObjectURL(rulesBlob);
     const rulesA=document.createElement('a');rulesA.href=rulesUrl;
     rulesA.download='咆帳本_分類規則_'+todayStr()+'.json';
-    setTimeout(()=>{rulesA.click();URL.revokeObjectURL(rulesUrl);},300);
+    document.body.appendChild(rulesA);rulesA.click();document.body.removeChild(rulesA);URL.revokeObjectURL(rulesUrl);
   }
   showToast('匯出 '+all.length+' 筆記錄＋分類規則 📊');
 }
