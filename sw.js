@@ -1,5 +1,5 @@
-// 汪帳本 Service Worker 🐾 — v6
-const CACHE = 'woof-v6';
+// 汪帳本 Service Worker 🐾 — v7
+const CACHE = 'woof-v7';
 const STATIC = ['./', './index.html', './manifest.json'];
 
 // ── Install: pre-cache app shell ──

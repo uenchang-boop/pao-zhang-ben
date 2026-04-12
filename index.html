@@ -75,6 +75,41 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--cream);color:var(--t
 .savings-input::-webkit-outer-spin-button,.savings-input::-webkit-inner-spin-button{-webkit-appearance:none}
 .savings-hint{font-size:10px;color:rgba(255,255,255,.55);margin-top:2px}
 
+/* 存股領息戰報 */
+.stock-calendar{margin:0 0 10px;border-radius:var(--radius-sm);overflow:hidden;
+  background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.35);backdrop-filter:blur(6px)}
+.stock-calendar-toggle{display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-tap-highlight-color:transparent}
+.stock-calendar-title{font-family:'Nunito',sans-serif;font-weight:800;font-size:.75rem;
+  color:white;letter-spacing:.3px;text-shadow:0 1px 3px rgba(0,0,0,.15)}
+.stock-calendar-chevron{color:rgba(255,255,255,.75);font-size:.6875rem;transition:transform .35s cubic-bezier(.4,0,.2,1);
+  display:inline-block;line-height:1}
+.stock-calendar-chevron.open{transform:rotate(180deg)}
+.stock-calendar-body{max-height:0;overflow:hidden;transition:max-height .4s cubic-bezier(.4,0,.2,1)}
+.stock-calendar-body.open{max-height:700px}
+.stock-list{padding:4px 8px 8px}
+.stock-item{background:rgba(255,255,255,.16);border-radius:9px;padding:7px 9px;margin-bottom:5px;
+  border-left:3px solid transparent;transition:background .15s}
+.stock-item:last-child{margin-bottom:0}
+.stock-item-header{display:flex;align-items:center;gap:5px;margin-bottom:3px;flex-wrap:wrap}
+.stock-ticker{font-family:'Nunito',sans-serif;font-weight:900;font-size:.75rem;color:white}
+.stock-name{font-size:.6875rem;color:rgba(255,255,255,.82);font-weight:600}
+.stock-freq{font-size:.5625rem;color:rgba(255,255,255,.55);margin-left:auto;white-space:nowrap}
+.stock-badge{font-size:.5625rem;font-weight:700;padding:1px 5px;border-radius:100px;letter-spacing:.3px;white-space:nowrap}
+.badge-hi{background:rgba(245,215,110,.3);color:#fff0a0;border:1px solid rgba(245,215,110,.45)}
+.badge-tech{background:rgba(130,195,255,.28);color:#c5e8ff;border:1px solid rgba(130,195,255,.4)}
+.badge-overseas{background:rgba(100,240,195,.22);color:#b0ffe0;border:1px solid rgba(100,240,195,.38)}
+.badge-finance{background:rgba(150,220,140,.28);color:#c4ffb0;border:1px solid rgba(150,220,140,.4)}
+.badge-food{background:rgba(255,175,110,.28);color:#ffe0c0;border:1px solid rgba(255,175,110,.4)}
+.stock-divs{display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap}
+.stock-div-amount{font-family:'Nunito',sans-serif;font-weight:800;font-size:.6875rem;color:#ffe98a}
+.stock-yield{font-family:'Nunito',sans-serif;font-weight:700;font-size:.6875rem;color:rgba(255,255,255,.72)}
+.stock-dates{font-size:.625rem;color:rgba(255,255,255,.6);line-height:1.4}
+.stock-deadline{color:#ffcf7a;font-weight:700}
+.stock-payday{color:#a8ffcc;font-weight:700}
+.stock-pred{font-size:.5625rem;color:rgba(255,255,255,.4)}
+body.elder-mode .stock-calendar-body.open{max-height:2000px}
+
 /* Summary */
 .summary-card{background:rgba(255,255,255,.25);backdrop-filter:blur(10px);
   border:1px solid rgba(255,255,255,.4);border-radius:var(--radius);
@@ -404,6 +439,96 @@ body.elder-mode .budget-warning-msg{font-size:1rem!important;padding:10px 14px!i
           placeholder="輸入金額" inputmode="decimal" oninput="saveSavings()">
       </div>
       <div class="savings-hint">點小狗查看激勵 🐾 · 僅記錄不連動帳本</div>
+    </div>
+  </div>
+
+  <!-- 存股領息戰報 -->
+  <div class="stock-calendar">
+    <div class="stock-calendar-toggle" onclick="toggleStockCalendar()">
+      <span class="stock-calendar-title">🚀 2026 存股領息戰報：領錢行事曆</span>
+      <span class="stock-calendar-chevron" id="stockCalChevron">▼</span>
+    </div>
+    <div class="stock-calendar-body" id="stockCalBody">
+      <div class="stock-list">
+        <div class="stock-item" style="border-left-color:#f5d76e">
+          <div class="stock-item-header">
+            <span class="stock-ticker">0056</span>
+            <span class="stock-name">元大高股息</span>
+            <span class="stock-badge badge-hi">高股息</span>
+            <span class="stock-freq">季配</span>
+          </div>
+          <div class="stock-divs">
+            <span class="stock-div-amount">💰 1.07 元</span>
+            <span class="stock-yield">📈 9.2%</span>
+          </div>
+          <div class="stock-dates">📅 <span class="stock-deadline">4/22 前上車</span> ➜ <span class="stock-payday">5/19 錢入帳</span></div>
+        </div>
+        <div class="stock-item" style="border-left-color:#f2a65a">
+          <div class="stock-item-header">
+            <span class="stock-ticker">00900</span>
+            <span class="stock-name">富邦高股息</span>
+            <span class="stock-badge badge-hi">高股息</span>
+            <span class="stock-freq">月配</span>
+          </div>
+          <div class="stock-divs">
+            <span class="stock-div-amount">💰 0.12 元</span>
+            <span class="stock-yield">📈 6.8%</span>
+          </div>
+          <div class="stock-dates">📅 <span class="stock-deadline">4/15 前上車</span> ➜ <span class="stock-payday">5/12 錢入帳</span></div>
+        </div>
+        <div class="stock-item" style="border-left-color:#82c3ff">
+          <div class="stock-item-header">
+            <span class="stock-ticker">00881</span>
+            <span class="stock-name">國泰台灣5G+</span>
+            <span class="stock-badge badge-tech">科技</span>
+            <span class="stock-freq">半年配</span>
+          </div>
+          <div class="stock-divs">
+            <span class="stock-div-amount">💰 1.00 元</span>
+            <span class="stock-yield">📈 8.5%</span>
+          </div>
+          <div class="stock-dates">📅 <span class="stock-deadline">7/16 前上車</span> ➜ <span class="stock-payday">8/20 錢入帳</span><span class="stock-pred"> (預)</span></div>
+        </div>
+        <div class="stock-item" style="border-left-color:#64f0c3">
+          <div class="stock-item-header">
+            <span class="stock-ticker">00882</span>
+            <span class="stock-name">中信中國高股息</span>
+            <span class="stock-badge badge-overseas">海外</span>
+            <span class="stock-freq">半年配</span>
+          </div>
+          <div class="stock-divs">
+            <span class="stock-div-amount">💰 0.45 元</span>
+            <span class="stock-yield">📈 6.7%</span>
+          </div>
+          <div class="stock-dates">📅 <span class="stock-deadline">7/16 前上車</span> ➜ <span class="stock-payday">8/18 錢入帳</span><span class="stock-pred"> (預)</span></div>
+        </div>
+        <div class="stock-item" style="border-left-color:#96dc8c">
+          <div class="stock-item-header">
+            <span class="stock-ticker">2884</span>
+            <span class="stock-name">玉山金</span>
+            <span class="stock-badge badge-finance">金融</span>
+            <span class="stock-freq">年配</span>
+          </div>
+          <div class="stock-divs">
+            <span class="stock-div-amount">💰 1.20 元 + 🍱 0.20 股</span>
+            <span class="stock-yield">📈 5.2%</span>
+          </div>
+          <div class="stock-dates">📅 <span class="stock-deadline">7/23 前上車</span> ➜ <span class="stock-payday">8/25 錢入帳</span><span class="stock-pred"> (預)</span></div>
+        </div>
+        <div class="stock-item" style="border-left-color:#ffaf6e">
+          <div class="stock-item-header">
+            <span class="stock-ticker">1232</span>
+            <span class="stock-name">大統益</span>
+            <span class="stock-badge badge-food">食品</span>
+            <span class="stock-freq">年配</span>
+          </div>
+          <div class="stock-divs">
+            <span class="stock-div-amount">💰 6.60 元</span>
+            <span class="stock-yield">📈 4.1%</span>
+          </div>
+          <div class="stock-dates">📅 <span class="stock-deadline">7/15 前上車</span> ➜ <span class="stock-payday">8/18 錢入帳</span><span class="stock-pred"> (預)</span></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -738,6 +863,12 @@ function saveSavings(){
 }
 function loadSavings(){
   try{const v=localStorage.getItem(SAVINGS_KEY);if(v!==null)document.getElementById('savingsInput').value=v;}catch(e){}
+}
+function toggleStockCalendar(){
+  const body=document.getElementById('stockCalBody');
+  const chevron=document.getElementById('stockCalChevron');
+  const open=body.classList.toggle('open');
+  chevron.classList.toggle('open',open);
 }
 
 // 字體大小
